@@ -163,9 +163,61 @@ int main(int argc, char **argv)
  * background children don't receive SIGINT (SIGTSTP) from the kernel
  * when we type ctrl-c (ctrl-z) at the keyboard.  
 */
-void eval(char *cmdline) 
+void eval(char *cmdline)
 {
-    return;
+	char *argv[MAXARGS];
+	// int to record bg
+	int bg;
+	pid_t pid;
+	sigset_t mask;
+
+	// parse the line
+	bg = parseline(cmdline, argv);
+
+	// check if valid
+	if(!builtin_cmd(argv)) {
+		// blocking first
+		sigemptyset(&mask);
+		sigaddset(&mask, SIGCHLD);
+		sigprocmask(SIG_BLOCK, &mask, NULL);
+
+		// forking
+		if((pid = fork()) < 0){
+			unix_error("forking error");
+		}
+
+		// child
+		else if(pid == 0) {
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
+			setpgid(0, 0);
+			// check if command is there
+			if(execvp(argv[0], argv) < 0) {
+				printf("%s: Command not found\n", argv[0]);
+				exit(1);
+			}
+		}
+
+		// parent add job first
+		else {
+			if(!bg){
+				addjob(jobs, pid, FG, cmdline);
+			}
+			else {
+				addjob(jobs, pid, BG, cmdline);
+			}
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+			//if bg/fg
+			if (!bg){
+				// wait for fg
+				waitfg(pid);
+			}
+			else {
+				// print bg
+				printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+			}
+		}
+	}
 }
 
 /* 
