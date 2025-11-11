@@ -368,7 +368,17 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
-    return;
+	struct job_t* job;
+	job = getjobpid(jobs,pid);
+	//check is valid or not
+	if(pid == 0){
+		return;
+	}
+	if(job != NULL){
+		while(pid==fgpid(jobs)){
+		}
+	}
+	return;
 }
 
 /*****************
