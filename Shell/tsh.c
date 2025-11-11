@@ -394,7 +394,28 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 {
-    return;
+	int status;
+	pid_t pid;
+
+	while ((pid = waitpid(fgpid(jobs), &status, WNOHANG|WUNTRACED)) > 0) {
+		if (WIFSTOPPED(status)){
+			//change state
+			getjobpid(jobs, pid)->state = ST;
+			int jid = pid2jid(pid);
+			printf("Job [%d] (%d) Stopped by signal %d\n", jid, pid, WSTOPSIG(status));
+		}
+		else if (WIFSIGNALED(status)){
+			//delete is signaled
+			int jid = pid2jid(pid);
+			printf("Job [%d] (%d) terminated by signal %d\n", jid, pid, WTERMSIG(status));
+			deletejob(jobs, pid);
+		}
+		else if (WIFEXITED(status)){
+			//exited
+			deletejob(jobs, pid);
+		}
+	}
+	return;
 }
 
 /* 
@@ -404,7 +425,13 @@ void sigchld_handler(int sig)
  */
 void sigint_handler(int sig) 
 {
-    return;
+	pid_t pid = fgpid(jobs);
+
+	//check for valid pid
+	if (pid != 0) {
+		kill(-pid, sig);
+	}
+	return;
 }
 
 /*
@@ -414,7 +441,13 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig) 
 {
-    return;
+	pid_t pid = fgpid(jobs);
+
+	//check for valid pid
+	if (pid != 0) {
+		kill(-pid, sig);
+	}
+	return;
 }
 
 /*********************
