@@ -80,6 +80,7 @@ static void *coalesce(void *bp);
 static char *heap_listp;
 static char *pre_listp;
 
+
 static void *extend_heap(size_t words)
 {
     char *bp;
@@ -99,6 +100,8 @@ static void *extend_heap(size_t words)
     /* Coalesce if the previous block was free */
     return coalesce(bp);
 }
+
+
 /*
  * mm_init - initialize the malloc package.
  */
@@ -150,17 +153,21 @@ static void place(void *bp, size_t asize)
 {
     size_t size = GET_SIZE(HDRP(bp));
 
-    if ((size - asize) >= (2*DSIZE)) {
-        PUT(HDRP(bp),PACK(asize,1));
-        PUT(FTRP(bp),PACK(asize,1));
-        PUT(HDRP(NEXT_BLKP(bp)),PACK(size - asize,0));
-        PUT(FTRP(NEXT_BLKP(bp)),PACK(size - asize,0));
-    } else {
-        PUT(HDRP(bp),PACK(size,1));
-        PUT(FTRP(bp),PACK(size,1));
+    if ((size - asize) >= (2 * DSIZE)) {
+        PUT(HDRP(bp), PACK(asize, 1));
+        PUT(FTRP(bp), PACK(asize, 1));
+        PUT(HDRP(NEXT_BLKP(bp)), PACK(size - asize, 0));
+        PUT(FTRP(NEXT_BLKP(bp)), PACK(size - asize, 0));
+    }
+
+    else {
+        PUT(HDRP(bp), PACK(size, 1));
+        PUT(FTRP(bp), PACK(size, 1));
     }
     pre_listp = bp;
 }
+
+
 /*
  * mm_malloc - Allocate a block by incrementing the brk pointer.
  *     Always allocate a block whose size is a multiple of the alignment.
