@@ -237,6 +237,8 @@ static void *coalesce(void *bp)
     pre_listp = bp;
     return bp;
 }
+
+
 /*
  * mm_free - Freeing a block does nothing.
  */
