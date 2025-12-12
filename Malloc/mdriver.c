@@ -215,15 +215,7 @@ int main(int argc, char **argv)
 	} 
 	else
 	    printf("Member 1 :%s:%s\n", team.name1, team.id1);
-
-	if (((*team.name2 != '\0') && (*team.id2 == '\0')) ||
-	    ((*team.name2 == '\0') && (*team.id2 != '\0'))) { 
-	    printf("ERROR.  You must fill in all or none of the team member 2 ID fields!\n");
-	    exit(1);
 	}
-	else if (*team.name2 != '\0')
-	    printf("Member 2 :%s:%s\n", team.name2, team.id2);
-    }
 
     /* 
      * If no -f command line arg, then use the entire set of tracefiles 
