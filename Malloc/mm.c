@@ -37,38 +37,38 @@ team_t team = {
 };
 
 
-/* single word (4) or double word (8) alignment */
+/* 单字4字节或双字8字节对齐 */
 #define ALIGNMENT 8
 
-/* rounds up to the nearest multiple of ALIGNMENT */
+/* 向上舍入到 ALIGNMENT 的最近倍数 */
 #define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
 
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
-/* Basic constants and macros */
-#define WSIZE 4 /* Word and header/footer size (bytes) */
-#define DSIZE 8 /* Double word size (bytes) */
-#define CHUNKSIZE (1 << 12) /* Extend heap by this amount (bytes) */
+/* 基本常量 */
+#define WSIZE 4 /* 字和头部脚部大小 */
+#define DSIZE 8 /* 双字大小 */
+#define CHUNKSIZE (1 << 12) /* 按此大小扩展堆 */
 
 #define MAX(x, y) ((x) > (y)? (x) : (y))
 
-/* Pack a size and allocated bit into a word */
+/* 将大小和已分配位打包到一个字中 */
 #define PACK(size, alloc) ((size) | (alloc))
 
-/* Read and write a word at address p */
+/* 在地址 p 处读取和写入一个字 */
 #define GET(p) (*(unsigned int *)(p))
 #define PUT(p, val) (*(unsigned int *)(p) = (val))
 
-/* Read the size and allocated fields from address p */
+/* 从地址 p 读取大小和已分配字段 */
 #define GET_SIZE(p) (GET(p) & ~0x7)
 #define GET_ALLOC(p) (GET(p) & 0x1)
 
-/* Given block ptr bp, compute address of its header and footer */
+/* 给定块指针 bp，计算其地址 */
 #define HDRP(bp) ((char *)(bp) - WSIZE)
 #define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
 
-/* Given block ptr bp, compute address of next and previous blocks */
+/* 给定块指针 bp，计算下一个和上一个块的地址 */
 #define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
 #define PREV_BLKP(bp) ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
 
@@ -86,18 +86,18 @@ static void *extend_heap(size_t words)
     char *bp;
     size_t size;
 
-    /* Allocate an even number of words to maintain alignment */
+    /* 分配字以保持对齐 */
     size = (words % 2) ? (words+1) * WSIZE : words * WSIZE;
     if ((long)(bp = mem_sbrk(size)) == -1)
         return NULL;
 
-    /* Initialize free block header/footer and the epilogue header */
+    /* 初始化空闲块和结尾块 */
 
-    PUT(HDRP(bp), PACK(size, 0)); /* Free block header */
-    PUT(FTRP(bp), PACK(size, 0)); /* Free block footer */
-    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */
+    PUT(HDRP(bp), PACK(size, 0)); /* 空闲块头部 */
+    PUT(FTRP(bp), PACK(size, 0)); /* 空闲块脚部 */
+    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* 新的结尾块头部 */
 
-    /* Coalesce if the previous block was free */
+    /* 如果前一个块是空闲的，则合并 */
     return coalesce(bp);
 }
 
@@ -107,16 +107,16 @@ static void *extend_heap(size_t words)
  */
 int mm_init(void)
 {
-    /* Create the initial empty heap */
+    /* 创建初始空堆 */
     if ((heap_listp = mem_sbrk(4 * WSIZE)) == (void *)-1)
         return -1;
-    PUT(heap_listp, 0); /* Alignment padding */
-    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1)); /* Prologue header */
-    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
-    PUT(heap_listp + (3 * WSIZE), PACK(0, 1)); /* Epilogue header */
+    PUT(heap_listp, 0); /* 对齐填充 */
+    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1));
+    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
+    PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
     heap_listp += (2 * WSIZE);
     pre_listp = heap_listp;
-    /* Extend the empty heap with a free block of CHUNKSIZE bytes */
+    /* 用 CHUNKSIZE 字节的空闲块扩展堆 */
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
         return -1;
     return 0;
@@ -174,27 +174,27 @@ static void place(void *bp, size_t asize)
  */
 void *mm_malloc(size_t size)
 {
-    size_t asize; /* Adjusted block size */
-    size_t extendsize; /* Amount to extend heap if no fit */
+    size_t asize; /* 调整后的块大小 */
+    size_t extendsize; /* 如果没有合适的块则扩展堆的数量 */
     char *bp;
 
-    /* Ignore spurious requests */
+    /* 忽略虚假请求 */
     if (size == 0)
         return NULL;
 
-    /* Adjust block size to include overhead and alignment reqs. */
+    /* 调整块大小 */
     if (size <= DSIZE)
         asize = 2*DSIZE;
     else
         asize = DSIZE * ((size + (DSIZE) + (DSIZE-1)) / DSIZE);
 
-    /* Search the free list for a fit */
+    /* 在空闲列表中搜索合适的块 */
     if ((bp = find_fit(asize)) != NULL) {
         place(bp, asize);
         return bp;
     }
 
-    /* No fit found. Get more memory and place the block */
+    /* 未找到合适的块，获取更多内存并放置块 */
     extendsize = MAX(asize,CHUNKSIZE);
     if ((bp = extend_heap(extendsize/WSIZE)) == NULL)
         return NULL;
@@ -208,18 +208,18 @@ static void *coalesce(void *bp)
     size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
     size_t size = GET_SIZE(HDRP(bp));
     //int isPre = (pre_listp == bp);
-    if (prev_alloc && next_alloc) { // Case 1
+    if (prev_alloc && next_alloc) {
         pre_listp = bp;
         return bp;
     }
 
-    if (prev_alloc && !next_alloc) { /* Case 2 */
+    if (prev_alloc && !next_alloc) {
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size,0));
     }
 
-    else if (!prev_alloc && next_alloc) { /* Case 3 */
+    else if (!prev_alloc && next_alloc) {
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
         PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
@@ -227,7 +227,7 @@ static void *coalesce(void *bp)
 
     }
 
-    else { /* Case 4 */
+    else {
         size += GET_SIZE(HDRP(PREV_BLKP(bp))) +
         GET_SIZE(FTRP(NEXT_BLKP(bp)));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
