@@ -275,3 +275,124 @@ void *mm_realloc(void *ptr, size_t size)
     mm_free(ptr);
     return newptr;
 }
+
+
+
+/* below code if for check heap invarints */
+
+/*
+static void printblock(void *bp)
+{
+    long int hsize, halloc, fsize, falloc;
+
+    hsize = GET_SIZE(HDRP(bp));
+    halloc = GET_ALLOC(HDRP(bp));
+    fsize = GET_SIZE(FTRP(bp));
+    falloc = GET_ALLOC(FTRP(bp));
+
+    if (hsize == 0) {
+        printf("%p: EOL\n", bp);
+        return;
+    }
+
+    printf("%p: header: [%ld:%c] footer: [%ld:%c]\n", bp,
+           hsize, (halloc ? 'a' : 'f'),
+           fsize, (falloc ? 'a' : 'f'));
+}
+
+static int checkblock(void *bp)
+{
+    //area is aligned
+    if ((size_t)bp % 8)
+        printf("Error: %p is not doubleword aligned\n", bp);
+    //header and footer match
+    if (GET(HDRP(bp)) != GET(FTRP(bp)))
+        printf("Error: header does not match footer\n");
+    size_t size = GET_SIZE(HDRP(bp));
+    //size is valid
+    if (size % 8)
+       printf("Error: %p payload size is not doubleword aligned\n", bp);
+    return GET_ALLOC(HDRP(bp));
+}
+
+static void printlist(void *i, long size)
+{
+    long int hsize, halloc;
+
+    for(;i != NULL;i = SUCC(i))
+    {
+        hsize = GET_SIZE(HDRP(i));
+        halloc = GET_ALLOC(HDRP(i));
+        printf("[listnode %ld] %p: header: [%ld:%c] prev: [%p]  next: [%p]\n",
+           size, i,
+           hsize, (halloc ? 'a' : 'f'),
+           PRED(i), SUCC(i));
+    }
+}
+
+static void checklist(void *i, size_t tar)
+{
+    void *pre = NULL;
+    long int hsize, halloc;
+    for(;i != NULL;i = SUCC(i))
+    {
+        if (PRED(i) != pre) printf("Error: pred point error\n");
+        if (pre != NULL && SUCC(pre) != i) printf("Error: succ point error\n");
+        hsize = GET_SIZE(HDRP(i));
+        halloc = GET_ALLOC(HDRP(i));
+        if (halloc) printf("Error: list node should be free\n");
+        if (pre != NULL && (GET_SIZE(HDRP(pre)) > hsize))
+           printf("Error: list size order error\n");
+        if (hsize < tar || ((tar != (1<<15)) && (hsize > (tar << 1)-1)))
+           printf("Error: list node size error\n");
+        pre = i;
+    }
+} */
+
+
+/*
+ * mm_checkheap - Check the heap for correctness
+ */
+
+/*
+void mm_checkheap(int verbose)
+{
+    checkheap(verbose);
+}
+
+void checkheap(int verbose)
+{
+    char *bp = heap_listp;
+
+    if (verbose)
+        printf("Heap (%p):\n", heap_listp);
+
+    if ((GET_SIZE(HDRP(heap_listp)) != DSIZE) || !GET_ALLOC(HDRP(heap_listp)))
+        printf("Bad prologue header\n");
+    // block level
+    checkblock(heap_listp);
+    int pre_free = 0;
+    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+        if (verbose)
+            printblock(bp);
+        int cur_free = checkblock(bp);
+        //no contiguous free blocks
+        if (pre_free && cur_free) {
+            printf("Contiguous free blocks\n");
+        }
+
+    }
+    //list level
+    int i = 0, tarsize = 1;
+    for (; i < LISTMAX; i++) {
+        if (verbose)
+            printlist(seg_free_lists[i], tarsize);
+        checklist(seg_free_lists[i],tarsize);
+        tarsize <<= 1;
+    }
+
+    if (verbose)
+        printblock(bp);
+    if ((GET_SIZE(HDRP(bp)) != 0) || !(GET_ALLOC(HDRP(bp))))
+        printf("Bad epilogue header\n");
+} */
